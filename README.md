@@ -1,7 +1,7 @@
-# How to Get Started with Development
+# Cards Against Humanity
 
 ## Introduction
-Cards against humanity :D
+Cards Against Humanity.
 
 ## Prerequisites
 python3, pip, npm
@@ -15,7 +15,6 @@ After cloning the repository:
 ```
 pip install -r requirements.txt 
 python app.py
-
 ```
 2. In the frontend folder run:
 ```
