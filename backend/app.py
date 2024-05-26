@@ -29,7 +29,7 @@ def on_send_message(data):
     print("message received!")
     room = data['room']
     message = data['message']
-    send(message, room=room)
+    emit('receive_message', message, room=room)
 
 if __name__ == '__main__':
     socketio.run(app, debug=True, port=5001)
