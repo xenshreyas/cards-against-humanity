@@ -23,5 +23,4 @@ npm run dev
 ```
 
 ## Conclusion
-Made with love,
-by have fun in us, FNU/Linux, yoda, Captain PPPants
+Made with love by have fun in us, FNU/Linux, yoda, Captain PPPants
