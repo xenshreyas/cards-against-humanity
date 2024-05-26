@@ -14,10 +14,23 @@ const Room = () => {
   const [messages, setMessages] = useState<string[]>([]);
 
   useEffect(() => {
-    socket.on("receive_message", (data) => {
-      setMessages([...messages, data]);
-    });
-  }, [messages]);
+    if (room_id) {
+      socket.emit("join_room", { room: room_id });
+
+      const handleMessage = (data: any) => {
+        console.log("Message received:", data);
+        setMessages((prevMessages) => [...prevMessages, data]);
+      };
+
+      socket.on("receive_message", handleMessage);
+
+      // Cleanup the event listener on component unmount
+      return () => {
+        socket.off("receive_message", handleMessage);
+        socket.emit("leave_room", { room: room_id });
+      };
+    }
+  }, [room_id]);
 
   const sendMessage = () => {
     const request = { message: message, room: room_id };
