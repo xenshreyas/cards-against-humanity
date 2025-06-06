@@ -1,10 +1,7 @@
 "use client";
 
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
-import io from "socket.io-client";
-
-const socket = io("http://localhost:5001");
+import { useEffect, useRef, useState } from "react";
 
 const Room = () => {
   const router = useRouter();
@@ -12,30 +9,28 @@ const Room = () => {
 
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<string[]>([]);
+  const socketRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
     if (room_id) {
-      socket.emit("join_room", { room: room_id });
+      const ws = new WebSocket(`ws://localhost:5001/ws/${room_id}`);
+      socketRef.current = ws;
 
-      const handleMessage = (data: any) => {
-        console.log("Message received:", data);
-        setMessages((prevMessages) => [...prevMessages, data]);
+      ws.onmessage = (event) => {
+        setMessages((prev) => [...prev, event.data]);
       };
 
-      socket.on("receive_message", handleMessage);
-
-      // Cleanup the event listener on component unmount
       return () => {
-        socket.off("receive_message", handleMessage);
-        socket.emit("leave_room", { room: room_id });
+        ws.close();
       };
     }
   }, [room_id]);
 
   const sendMessage = () => {
-    const request = { message: message, room: room_id };
-    socket.emit("send_message", request);
-    setMessage("");
+    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+      socketRef.current.send(message);
+      setMessage("");
+    }
   };
 
   return (

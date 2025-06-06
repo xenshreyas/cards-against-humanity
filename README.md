@@ -13,8 +13,8 @@ Clone repository after making sure the prerequisites are installed.
 After cloning the repository:
 1. In the backend folder run:
 ```
-pip install -r requirements.txt 
-python app.py
+pip install -r requirements.txt
+uvicorn app:app --reload --port 5001
 ```
 2. In the frontend folder run:
 ```
