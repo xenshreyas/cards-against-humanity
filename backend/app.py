@@ -1,35 +1,45 @@
-from flask import Flask, request
-from flask_cors import CORS
-from flask_socketio import SocketIO, join_room, leave_room, send, emit
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
+import uvicorn
 
-app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})  # Allow all origins for simplicity
-socketio = SocketIO(app, cors_allowed_origins="*")  # Allow all origins for SocketIO
+app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-@socketio.on('create_room')
-def on_create_room(data):
-    room = data['room']
-    join_room(room)
-    emit('room_created', {'room': room}, room=room)
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: dict[str, set[WebSocket]] = {}
 
-@socketio.on('join_room')
-def on_join_room(data):
-    room = data['room']
-    join_room(room)
-    emit('room_joined', {'room': room}, room=room)
+    async def connect(self, room: str, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.setdefault(room, set()).add(websocket)
 
-@socketio.on('leave_room')
-def on_leave_room(data):
-    room = data['room']
-    leave_room(room)
-    emit('room_left', {'room': room}, room=room)
+    def disconnect(self, room: str, websocket: WebSocket):
+        if room in self.active_connections:
+            self.active_connections[room].discard(websocket)
+            if not self.active_connections[room]:
+                del self.active_connections[room]
 
-@socketio.on('send_message')
-def on_send_message(data):
-    print("message received!")
-    room = data['room']
-    message = data['message']
-    emit('receive_message', message, room=room)
+    async def broadcast(self, room: str, message: str):
+        for connection in list(self.active_connections.get(room, [])):
+            await connection.send_text(message)
 
-if __name__ == '__main__':
-    socketio.run(app, debug=True, port=5001)
+manager = ConnectionManager()
+
+@app.websocket("/ws/{room}")
+async def websocket_endpoint(websocket: WebSocket, room: str):
+    await manager.connect(room, websocket)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            await manager.broadcast(room, data)
+    except WebSocketDisconnect:
+        manager.disconnect(room, websocket)
+
+if __name__ == "__main__":
+    uvicorn.run("app:app", host="0.0.0.0", port=5001, reload=True)
