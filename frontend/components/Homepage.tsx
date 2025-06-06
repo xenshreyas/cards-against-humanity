@@ -1,19 +1,37 @@
-import React from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 
 const Homepage = () => {
   const router = useRouter();
 
+  const [room, setRoom] = useState("");
+
   const createRoom = () => {
-    // Logic to create a room and navigate to the room page
-    const roomId = Math.random().toString(36).substring(2, 15); // Generate a random room ID
+    const roomId = Math.random().toString(36).substring(2, 15);
     router.push(`/rooms/${roomId}`);
+  };
+
+  const joinRoom = () => {
+    if (room.trim()) {
+      router.push(`/rooms/${room}`);
+    }
   };
 
   return (
     <div>
       <h1>Welcome to Cards Against Humanity</h1>
-      <button onClick={createRoom}>Create Room</button>
+      <div>
+        <button onClick={createRoom}>Create Room</button>
+      </div>
+      <div>
+        <input
+          type="text"
+          placeholder="Room ID"
+          value={room}
+          onChange={(e) => setRoom(e.target.value)}
+        />
+        <button onClick={joinRoom}>Join Room</button>
+      </div>
     </div>
   );
 };
